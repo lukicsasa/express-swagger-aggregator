@@ -20,8 +20,8 @@ app.use((err, req, res, next) => {
 })
 
 router.use('/', swaggerUi.serve);
-router.get('/api-docs', swaggerAggregator.getDocs)
-router.get('/', swaggerAggregator.swaggerUi)
+router.get('/api-docs', swaggerAggregator.getApiDocs)
+router.get('/', swaggerAggregator.getSwaggerUi)
 
 app.use(router)
 

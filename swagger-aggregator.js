@@ -4,17 +4,18 @@ const axios = require("axios")
 const _ = require('lodash')
 const swaggerUi = require('swagger-ui-express')
 
-module.exports.swaggerUi = async (req, res, next) => {
+module.exports.getSwaggerUi = async (req, res) => {
     const config = await readConfigFile()
     return res.send(swaggerUi.generateHTML(await aggregate(), {customSiteTitle: config.name}))
 }
 
-module.exports.getDocs = async (req, res, next) => {
+module.exports.getApiDocs = async (req, res) => {
     return res.json(await aggregate())
 }
 
 async function aggregate () {
     const config = await readConfigFile()
+
 
     const swaggers = (await Promise.all(
         config.endpoints.map(endpoint => axios.get(endpoint))
@@ -77,6 +78,21 @@ function mergeTags (swaggers) {
     })
 
     return tags
+}
+
+function validateConfig(config) {
+    if(!config.endpoints || !config.endpoints.length) {
+        throw new Error('Endpoints not defined')
+    }
+
+    if(!config.name) {
+        throw new Error('Name not defined')
+    }
+
+    if(!config.baseUrl) {
+        throw new Error('Base Url not defined')
+    }
+
 }
 
 

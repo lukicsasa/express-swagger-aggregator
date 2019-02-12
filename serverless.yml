@@ -11,7 +11,7 @@ provider:
 
 functions:
   app:
-    handler: handler.server # reference the file and exported method
+    handler: app.server # reference the file and exported method
     events: # events trigger lambda functions
       - http: # this is an API Gateway HTTP event trigger
           path: /
