@@ -13,7 +13,7 @@ app.use((err, req, res, next) => {
     }
 })
 
-app.use(swaggerAggregator('./config.yaml',  '/swagger-ui'))
+app.use(swaggerAggregator('./config.yaml'))
 
 module.exports.server = sls(app)
 

@@ -16,7 +16,9 @@ function getSwaggerUi (configFile, swaggerOptions) {
     return async (req, res) => {
         const config = await readConfigFile(configFile)
 
-        return res.send(swaggerUi.generateHTML(await aggregate(config), {
+        const aggregatedSwagger = await aggregate(config)
+
+        return res.send(swaggerUi.generateHTML(aggregatedSwagger, {
             customSiteTitle: config.name,
             swaggerOptions:  swaggerOptions || {docExpansion: "none"}
         }))
@@ -26,7 +28,10 @@ function getSwaggerUi (configFile, swaggerOptions) {
 function getApiDocs (configFile) {
     return async (req, res) => {
         const config = await readConfigFile(configFile)
-        return res.json(await aggregate(config))
+
+        const aggregatedSwagger = await aggregate(config)
+
+        return res.json(aggregatedSwagger)
     }
 }
 
