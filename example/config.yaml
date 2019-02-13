@@ -1,5 +1,9 @@
-name:
-baseUrl:
+name: Car For You
+baseUrl: api.preprod.carforyou.ch
 endpoints:
-  - url:
-    name:
+  - url: https://carforyou-service.preprod.carforyou.ch/v2/api-docs
+    name: CarForYou Service
+  - url: https://catalogue-service.preprod.carforyou.ch/v2/api-docs
+    name: Catalogue Service
+  - url: https://inventory-search-service.preprod.carforyou.ch/v2/api-docs
+    name: Inventory Search Service
