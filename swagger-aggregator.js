@@ -1,44 +1,62 @@
 const yaml = require('js-yaml')
 const fs = require('fs')
 const axios = require("axios")
-const _ = require('lodash')
 const swaggerUi = require('swagger-ui-express')
+const router = require('express').Router()
 
-module.exports.getSwaggerUi = async (req, res) => {
-    const config = await readConfigFile()
-    return res.send(swaggerUi.generateHTML(await aggregate(), {customSiteTitle: config.name}))
+module.exports = (configFile, swaggerUiUrl, apiDocsUrl, swaggerOptions) => {
+    router.use('/', swaggerUi.serve)
+    router.get(apiDocsUrl || '/api-docs', getApiDocs(configFile))
+    router.get(swaggerUiUrl || '/', getSwaggerUi(configFile, swaggerOptions))
+
+    return router
 }
 
-module.exports.getApiDocs = async (req, res) => {
-    return res.json(await aggregate())
+function getSwaggerUi (configFile, swaggerOptions) {
+    return async (req, res) => {
+        const config = await readConfigFile(configFile)
+
+        return res.send(swaggerUi.generateHTML(await aggregate(config), {
+            customSiteTitle: config.name,
+            swaggerOptions:  swaggerOptions || {docExpansion: "none"}
+        }))
+    }
 }
 
-async function aggregate () {
-    const config = await readConfigFile()
+function getApiDocs (configFile) {
+    return async (req, res) => {
+        const config = await readConfigFile(configFile)
+        return res.json(await aggregate(config))
+    }
+}
 
-
+async function aggregate (config) {
     const swaggers = (await Promise.all(
-        config.endpoints.map(endpoint => axios.get(endpoint))
+        config.endpoints.map(endpoint => axios.get(endpoint.url))
     )).map(x => x.data)
 
     return mergeSwaggers(swaggers, config)
 }
 
-async function readConfigFile () {
-    const file = await fs.readFileSync('./config.yaml', 'utf8')
-    return yaml.safeLoad(file)
+async function readConfigFile (path) {
+    const file = await fs.readFileSync(path, 'utf8')
+    const config = yaml.safeLoad(file)
+
+    validateConfig(config)
+
+    return config
 }
 
 function mergeSwaggers (swaggers, config) {
     const info = swaggers[0].info
     info.title = "Aggregated Api Documentation"
-    info.description = config.endpoints.reduce((x, y) => x + ", \n " + y)
+    info.description = config.endpoints.map(x => x.name + ' - ' + x.url).reduce((x, y) => x + "\n" + y)
     return {
         host: config.baseUrl,
         info: info,
         swagger: swaggers[0].swagger,
         definitions: mergeDefinitions(swaggers),
-        tags: mergeTags(swaggers),
+        tags: mergeTags(swaggers, config.endpoints),
         paths: mergePaths(swaggers)
     }
 }
@@ -46,9 +64,11 @@ function mergeSwaggers (swaggers, config) {
 function mergePaths (swaggers) {
     const paths = {}
 
-    _.each(swaggers, swagger => {
+    swaggers.forEach(swagger => {
         for (const path in swagger.paths) {
-            paths[path] = swagger.paths[path]
+            if (swagger.paths.hasOwnProperty(path)) {
+                paths[path] = swagger.paths[path]
+            }
         }
     })
 
@@ -58,21 +78,23 @@ function mergePaths (swaggers) {
 function mergeDefinitions (swaggers) {
     const definitions = {}
 
-    _.each(swaggers, swagger => {
+    swaggers.forEach(swagger => {
         for (const definition in swagger.definitions) {
-            definitions[definition] = swagger.definitions[definition]
+            if (swagger.definitions.hasOwnProperty(definition)) {
+                definitions[definition] = swagger.definitions[definition]
+            }
         }
     })
 
     return definitions
 }
 
-function mergeTags (swaggers) {
+function mergeTags (swaggers, endpoints) {
     const tags = []
 
-    _.each(swaggers, swagger => {
-        _.each(swagger.tags, tag => {
-            tag.description = tag.description + ` (${swagger.host})`
+    swaggers.forEach(swagger => {
+        swagger.tags.forEach(tag => {
+            tag.description = tag.description + ` (${endpoints.find(x => x.url.includes(swagger.host)).name})`
             tags.push(tag)
         })
     })
@@ -80,16 +102,16 @@ function mergeTags (swaggers) {
     return tags
 }
 
-function validateConfig(config) {
-    if(!config.endpoints || !config.endpoints.length) {
+function validateConfig (config) {
+    if (!config.endpoints || !config.endpoints.length) {
         throw new Error('Endpoints not defined')
     }
 
-    if(!config.name) {
+    if (!config.name) {
         throw new Error('Name not defined')
     }
 
-    if(!config.baseUrl) {
+    if (!config.baseUrl) {
         throw new Error('Base Url not defined')
     }
 
