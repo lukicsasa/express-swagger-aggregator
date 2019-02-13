@@ -4,7 +4,7 @@ Node.js Express tool that aggregates Swagger documentation from different endpoi
 
 ### Installation
 
-``npm install swagger-aggregator``
+``npm install express-swagger-aggregator``
  
 ## Overview
 
@@ -14,6 +14,8 @@ As seen in example, it is supposed to be used as standalone application with sol
 
 Register `swagger-aggregator` as middleware in your project:
 ```
+const swaggerAggregator = require('express-swagger-aggregator')
+
 const app = express()
 
 app.use(swaggerAggregator('./config.yaml'))

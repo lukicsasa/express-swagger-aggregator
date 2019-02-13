@@ -1,7 +1,7 @@
 const express = require('express')
 const sls = require('serverless-http')
 
-const swaggerAggregator = require('../swagger-aggregator')
+const swaggerAggregator = require('express-swagger-aggregator')
 
 const app = express()
 

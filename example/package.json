@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.4",
+    "express-swagger-aggregator": "^1.0.1",
     "serverless-http": "^1.9.0"
   },
   "devDependencies": {
